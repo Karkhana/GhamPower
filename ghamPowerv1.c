@@ -11,6 +11,8 @@
 #define RS PD0
 #define RW PD1
 #define E  PD2
+#define R1  2200
+#define R2  330
 
 #define HIGH(PORT,PIN) PORT|=(1<<PIN)
 #define LOW(PORT,PIN) PORT&=~(1<<PIN)
@@ -209,15 +211,18 @@ uint16_t readADC(uint8_t ch)
 
    ADCSRA|=(1<<ADIF);
 
+
+	
+
    return(ADC);
 }
 
 int main()
 {	
  	
-	uint16_t adcVal;
- 	//uint8_t voltage;
-	float voltage;
+	uint16_t val, temp=0,adcVal,adcVal1;
+	unsigned char toggle=1;
+ 	float voltageDiv, actualVoltage;
 	int sensitivity;
 	float sensedVoltage, difference, sensedCurrent;
 
@@ -227,34 +232,64 @@ int main()
 	Send(0b00000001,0);		//Clear LCD
 
 	LCDGotoXY(0,0);
-	//Write(-1234,6);
+	
 	while(1)
 	{
-		LCDGotoXY(0,0);
-		adcVal=readADC(1);			//channel 1
-		voltage= ((adcVal)/1023.0)*5;	//Reference 5V
+		if(toggle)
+		{
+			initADC();
+			LCDGotoXY(0,0);
+			for(unsigned char i=0;i<10;i++)							//looping 10 times for getting average value 
+			{	
+				val=readADC(2);			//channel 2
+				temp+=val;		
+			}
+		
+			adcVal1 = temp/10;					//getting average value
+			val=0;
+			temp=0;
+		
+			voltageDiv= ((adcVal1)/1023.0)*5;	//Reference 5V		
+			actualVoltage=((R1+R2)*voltageDiv)/R2;
+			LCDWriteString("Voltage:");
+			LCDWriteFloat(actualVoltage);
+			LCDWriteString("V");
+			toggle=0;
+		}
+		else
+		{
+			initADC();
 
+			for(unsigned char i=0;i<10;i++)							//looping 10 times for getting average value 
+			{	
+				val=readADC(1);			//channel 1
+				temp+=val;		
+			}
 		
-		sensitivity    = 83; // mV/A
-		sensedVoltage  = ((adcVal)/1023.0)*5;	//Reference 5V
-		difference     = sensedVoltage - 2.5; //Vcc/2
-		sensedCurrent  = difference / sensitivity;
+			adcVal = temp/10;					//getting average value
+			val=0;
+			temp=0;
 
-		
-		LCDWriteString("Voltage:");
-		LCDWriteFloat(sensedVoltage);
-		//LCDWriteString("ADC val:");	//test ADC value 
-		//LCDWriteInt(adcVal);
-		//LCDWriteInt(voltage);
-		
-		LCDGotoXY(0,1);
-		LCDWriteString("Current:");
-		//LCDWriteInt(adcVal);
-		//LCDWriteInt(voltage);
-		LCDWriteFloat(sensedCurrent*1000);
-		LCDWriteString("mA");
-		_delay_ms(1500);
-		Send(0b00000001,0);		//Clear LCD
+			sensitivity    = 83; // mV/A
+			sensedVoltage  = ((adcVal)/1023.0)*5;	//Reference 5V
+			difference     = sensedVoltage - 2.5; //Vcc/2
+			LCDGotoXY(0,1);
+			LCDWriteString("Current:");
+			if(difference<0) 					//for negative current
+			{
+				difference=difference*(-1);
+				LCDWriteString("-");
+			}
+			sensedCurrent=difference/sensitivity;		
+			//LCDWriteInt(adcVal);
+			//LCDWriteInt(sensedVoltage);
+			LCDWriteFloat(sensedCurrent*1000);
+			LCDWriteString("mA");
+			toggle=1;
+		}	
+
+		_delay_ms(500);
+		//Send(0b00000001,0);		//Clear LCD
 	}
 	
  	return 0;
