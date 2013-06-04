@@ -223,7 +223,7 @@ int main()
 	uint16_t val, temp=0,adcVal,adcVal1;
 	unsigned char toggle=1;
  	float voltageDiv, actualVoltage;
-	int sensitivity;
+	float sensitivity;
 	float sensedVoltage, difference, sensedCurrent;
 
 	InitLCD(0);
@@ -235,6 +235,7 @@ int main()
 	
 	while(1)
 	{
+		/*
 		if(toggle)
 		{
 			initADC();
@@ -257,6 +258,7 @@ int main()
 			toggle=0;
 		}
 		else
+		*/
 		{
 			initADC();
 
@@ -270,9 +272,16 @@ int main()
 			val=0;
 			temp=0;
 
-			sensitivity    = 83; // mV/A
-			sensedVoltage  = ((adcVal)/1023.0)*5;	//Reference 5V
+			//sensitivity    = 0.083; // mV/A
+			sensitivity    = 0.083; // mV/A
+			sensedVoltage  = ((adcVal)/1024.0)*5;	//Reference 5V
 			difference     = sensedVoltage - 2.5; //Vcc/2
+			
+			//LCDGotoXY(0,0);			//to test output voltage
+			
+			//LCDWriteString("Voltage:");
+			//LCDWriteFloat(sensedVoltage);
+
 			LCDGotoXY(0,1);
 			LCDWriteString("Current:");
 			if(difference<0) 					//for negative current
@@ -281,15 +290,13 @@ int main()
 				LCDWriteString("-");
 			}
 			sensedCurrent=difference/sensitivity;		
-			//LCDWriteInt(adcVal);
-			//LCDWriteInt(sensedVoltage);
 			LCDWriteFloat(sensedCurrent*1000);
 			LCDWriteString("mA");
 			toggle=1;
 		}	
 
 		_delay_ms(500);
-		//Send(0b00000001,0);		//Clear LCD
+		Send(0b00000001,0);		//Clear LCD
 	}
 	
  	return 0;
