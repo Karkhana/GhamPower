@@ -235,7 +235,6 @@ int main()
 	
 	while(1)
 	{
-		/*
 		if(toggle)
 		{
 			initADC();
@@ -258,7 +257,6 @@ int main()
 			toggle=0;
 		}
 		else
-		*/
 		{
 			initADC();
 
